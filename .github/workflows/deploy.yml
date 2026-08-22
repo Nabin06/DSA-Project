@@ -1,0 +1,49 @@
+name: Build and Deploy to Portfolio Website
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout DSA-Project
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build React App
+        run: npm run build
+
+      - name: Checkout Portfolio Repo (website1)
+        uses: actions/checkout@v4
+        with:
+          repository: 'Nabin06/website1'
+          token: ${{ secrets.PORTFOLIO_PAT }}
+          path: portfolio-repo
+
+      - name: Update DSA-visualizer Folder
+        run: |
+          # Remove existing build files
+          rm -rf portfolio-repo/DSA-visualizer/*
+          
+          # Copy new build files (adjust 'build' to 'dist' if using Vite)
+          cp -r dist/* portfolio-repo/DSA-visualizer/
+
+      - name: Commit and Push to website1
+        run: |
+          cd portfolio-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add DSA-visualizer
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update DSA-visualizer from DSA-Project CI" && git push)
