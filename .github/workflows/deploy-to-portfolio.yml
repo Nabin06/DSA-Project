@@ -1,0 +1,55 @@
+name: Deploy DSA demo to portfolio
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out DSA project
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Check out portfolio repository
+        uses: actions/checkout@v4
+        with:
+          repository: Nabin06/Website1
+          ref: master
+          token: ${{ secrets.PORTFOLIO_TOKEN }}
+          path: portfolio
+
+      - name: Replace portfolio demo files
+        run: |
+          rm -rf portfolio/dsaproject
+          mkdir -p portfolio/dsaproject
+          cp -R dist/. portfolio/dsaproject/
+
+      - name: Publish updated demo
+        working-directory: portfolio
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dsaproject
+          if git diff --cached --quiet; then
+            echo "No demo changes to publish"
+          else
+            git commit -m "Deploy DSA project demo"
+            git push origin master
+          fi
