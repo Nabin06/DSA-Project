@@ -29,7 +29,12 @@ jobs:
       - name: Build project
         run: npm run build
 
+      - name: Skip deploy when token is missing
+        if: ${{ secrets.PORTFOLIO_REPO_TOKEN == '' }}
+        run: echo "PORTFOLIO_REPO_TOKEN is not set; skipping portfolio deployment."
+
       - name: Checkout portfolio repository
+        if: ${{ secrets.PORTFOLIO_REPO_TOKEN != '' }}
         uses: actions/checkout@v4
         with:
           repository: Nabin06/Website1
@@ -38,12 +43,14 @@ jobs:
           path: portfolio
 
       - name: Update portfolio demo
+        if: ${{ secrets.PORTFOLIO_REPO_TOKEN != '' }}
         run: |
           rm -rf portfolio/dsaproject
           mkdir -p portfolio/dsaproject
           cp -R dist/. portfolio/dsaproject/
 
       - name: Commit and push demo
+        if: ${{ secrets.PORTFOLIO_REPO_TOKEN != '' }}
         working-directory: portfolio
         run: |
           git config user.name "github-actions[bot]"
